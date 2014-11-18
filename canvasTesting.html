@@ -1,0 +1,721 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Canvas Game</title>
+</head>
+
+<body>
+	<canvas width="1366px" height="768px" style="
+    margin: 40px auto 0px auto;
+    display: block;" > </canvas>
+
+	<script type="text/javascript">
+		
+		//canvas variables
+		var canvas = document.querySelector("canvas");
+		var drawingSurface = canvas.getContext("2d");
+		
+		//setting up the sprite variables and functions
+		var spriteObject = {
+			x: 0,
+			y: 0,
+			vx: 0,
+			vy: 0,
+			sourceX: 0,
+			sourceY: 0,
+			sourceWidth: 194,
+			sourceHeight: 214,
+			width: 194,
+			height: 214,
+			rotation: 0,
+			rotationAcceleration: 0,
+			acceleration: .2,
+			friction: .98,
+			speed: 15,
+			jumpForce: -20,
+			onGround: false,
+			centerX: function () {
+				return this.x + (this.width/2);
+			},
+			centerY: function () {
+				return this.y + (this.height/2);
+			},
+			halfWidth: function () {
+				return this.width/2;
+			},
+			halfHeight: function () {
+				return this.height/2;
+			}
+		};
+		
+		// setting up the mouse variables
+		var mouse = {
+			x: canvas.width/2,
+			y: 0,
+			down: false
+		}
+		
+		//adding event listeners for the mouse
+		canvas.addEventListener("mousedown", function(event) {
+		
+			mouse.down = true;
+			
+		}, false);
+		canvas.addEventListener("mouseup", function(event) {
+		
+			mouse.down = false;
+			
+		}, false);
+		canvas.addEventListener("mousemove", function(event) {
+		
+			mouse.x = event.offsetX;
+			mouse.y = event.offsetY;
+			
+			console.log(mouse.x);
+			console.log(mouse.y);
+			
+		}, false);
+
+		//setting the magnet time
+		var magnetTime = 0;
+		//setting the initial score
+		var score = 0;
+		
+		//setting up the background of the game	
+		var backgroundObject = Object.create(spriteObject);
+		backgroundObject.x = 0;
+		backgroundObject.y = 0;
+		backgroundObject.width = 1366;
+		backgroundObject.height = 768;
+		backgroundObject.sourceWidth = 1366;
+		backgroundObject.sourceHeight = 768;
+		backgroundObject.sourceX = 0;
+		backgroundObject.sourceY = 215;
+		
+		//setting up the pineapple		
+		var pineappleObject = Object.create(spriteObject);
+		pineappleObject.sourceX = 194;
+		pineappleObject.sourceWidth = 128;
+		pineappleObject.sourceHeight = 128;
+		pineappleObject.width = 128;
+		pineappleObject.height = 128;
+		pineappleObject.vy = 0;
+		pineappleObject.pull = true;
+		pineappleObject.maxSpeed = 10;
+		pineappleObject.collide = function() {
+			score++;
+		}
+		
+		var purplePineappleObject = Object.create(spriteObject);
+		purplePineappleObject.sourceX = 194 + 256;
+		purplePineappleObject.sourceWidth = 128;
+		purplePineappleObject.sourceHeight = 128;
+		purplePineappleObject.width = 128;
+		purplePineappleObject.height = 128;
+		purplePineappleObject.vy = 0;
+		purplePineappleObject.pull = false;
+		purplePineappleObject.maxSpeed = 10;
+		purplePineappleObject.collide = function() {
+			score -= 10;
+		}
+		
+		var stunTime = 0;
+		
+		var coconutObject = Object.create(spriteObject);
+		coconutObject.sourceX = 194 + 256 + 128;
+		coconutObject.sourceWidth = 128;
+		coconutObject.sourceHeight = 128;
+		coconutObject.width = 128;
+		coconutObject.height = 128;
+		coconutObject.vy = 0;
+		coconutObject.pull = false;
+		coconutObject.maxSpeed = 10;
+		coconutObject.collide = function() {
+			stunTime += 120;
+			score -= 5;
+			panda.vx = 0;
+			
+		}
+
+		//setting up the magnet		
+		var magnetObject = Object.create(spriteObject);
+		magnetObject.sourceX = 322;
+		magnetObject.sourceWidth = 128;
+		magnetObject.sourceHeight = 128;
+		magnetObject.width = 128;
+		magnetObject.height = 128;
+		magnetObject.vy = 5;
+		magnetObject.maxSpeed = 20;
+		magnetObject.collide = function() {
+			magnetTime += 60 * 4;
+		};
+		
+		//creating the panda object
+		var pandaObject = Object.create(spriteObject);
+		
+		//creating the sprites array
+		var sprites = [];
+		
+		//creating the panda
+		var panda = Object.create(pandaObject);
+		panda.x = (canvas.width/2) - (panda.width/2);
+		panda.y = -panda.height;
+		panda.acceleration = .6;
+		panda.jumpForce = -15;
+
+		//pushing the panda into the sprites array
+		sprites.push(panda);
+		
+		//setting the gravity
+		var GRAVITY = .3;
+		
+		//setting the key-codes
+		var RIGHT = 39;
+		var LEFT = 37;
+		var UP = 38;
+		var DOWN = 40;
+
+		//setting variables for key-presses
+		var right=false;
+		var up=false;
+		var left=false;
+		var down=false;
+		
+		//setting game state variables
+		var MENU = 0;
+		var PLAYING = 1;
+		
+		var gameState = MENU;
+		
+		//adding key-press listeners	
+		window.addEventListener("keydown", keyDownHandler, false);
+		window.addEventListener("keyup", keyUpHandler, false);
+		
+		//creating the sound variable
+		var pickupSound = new Audio("Pickup1.wav");
+		pickupSound.volume = 1;
+
+		//creating the image variable		
+		var image = new Image();
+		
+		image.src="pineappleGame.png";
+		//adding an event listener for when the image loads
+		image.addEventListener("load", loadHandler, false);
+		
+		//removes the load event handler and updates when the image is loaded
+		function loadHandler()
+		{
+			image.removeEventListener("load", loadHandler, false);
+			update();
+		}
+		
+		function resetGame()
+		{
+			score = 0;
+			gameTime = 0;
+			sprites = [];
+			
+			panda.x = (canvas.width/2) - (panda.width/2);
+			panda.y = canvas.height - panda.height;
+			panda.acceleration = .6;
+			panda.jumpForce = -15;
+			
+			sprites.push(panda);
+		}
+		
+		//sets a variable that increases by one every tick
+		var updateTime = 0;
+		
+		function update()
+		{
+			//tell the browser to call the update function every 60th of a second for an animation
+			window.requestAnimationFrame(update);
+			
+			//increases updateTime by one 
+			updateTime++;
+			
+			//reads the game state and decides whether to run the menu or play the game
+			switch (gameState) {
+				case MENU:
+					menu();
+					break;
+				case PLAYING:
+					playGame();	
+					break;
+			}
+			
+		}
+
+		//logic behind the menu
+		function menu() {
+			renderMenu();
+			
+			if (mouse.down) {
+				gameState = PLAYING;
+			}
+			
+			if (panda.centerX() < mouse.x) {
+				panda.vx += .2;
+			}
+			if (panda.centerX() > mouse.x) {
+				panda.vx -= .2;
+			}
+			if (panda.vx > Math.abs(-(panda.centerX() - mouse.x)/20)) {
+				panda.vx = -(panda.centerX() - mouse.x)/20;
+			}
+			if (panda.vx < -Math.abs(-(panda.centerX() - mouse.x)/20)) {
+				panda.vx = -(panda.centerX() - mouse.x)/20;
+			}
+			panda.x+=panda.vx;
+			panda.y = canvas.height-panda.height;
+		}
+
+		//draws the menu and updates it
+		function renderMenu() {
+			//clears the canvas
+			drawingSurface.clearRect(0,0,canvas.width,canvas.height);
+			//draws the background
+			drawSprite(backgroundObject);
+			
+			//draws the panda
+			drawSprite(panda);
+			
+			//sets the color variable
+			var color = "#FFD700";
+			/*var color = "rgba(";
+			color = color + Math.floor(Math.random()*256).toString();
+			color = color + ",";
+			color = color + Math.floor(Math.random()*256).toString();
+			color = color + ",";
+			color = color + Math.floor(Math.random()*256).toString();
+			color = color + ",1)";*/
+			
+			// saves hte drawing surface
+			drawingSurface.save();
+			
+			//moves the drawing surface to center of the text
+			drawingSurface.translate(canvas.width/2,canvas.height * 1/3);
+			
+			//changes the variables of the drawing surface
+			drawingSurface.font="bold 100px Verdana";
+			drawingSurface.fillStyle=color;
+			drawingSurface.textAlign="center";
+			drawingSurface.textBaseline="middle";
+			drawingSurface.shadowColor = "#990000";
+			drawingSurface.shadowOffsetX = 5;
+			drawingSurface.shadowOffsetY = 5;
+			drawingSurface.shadowBlur = 10;
+			//causes the text to wobble
+			drawingSurface.rotate(Math.sin(updateTime/40)/80);
+			//draws the text
+			drawingSurface.fillText("Pineapple Panda",0,0);
+		
+			drawingSurface.restore();
+			
+			var color = "#FFFFFF";
+			/*var color = "rgba(";
+			color = color + Math.floor(Math.random()*256).toString();
+			color = color + ",";
+			color = color + Math.floor(Math.random()*256).toString();
+			color = color + ",";
+			color = color + Math.floor(Math.random()*256).toString();
+			color = color + ",1)";*/
+			
+			drawingSurface.save();
+			
+			//moves the drawing surface to the center of the text
+			drawingSurface.translate(canvas.width/2,canvas.height * 6 / 10);
+			
+			//sets the text variables
+			drawingSurface.font="bold 60px Verdana";
+			drawingSurface.fillStyle=color;
+			drawingSurface.textAlign="center";
+			drawingSurface.textBaseline="middle";
+			drawingSurface.shadowColor = "#990000";
+			drawingSurface.shadowOffsetX = 5;
+			drawingSurface.shadowOffsetY = 5;
+			drawingSurface.shadowBlur = 10;
+			//causes the text to wobble
+			drawingSurface.rotate(Math.sin(updateTime/10)/20);
+			//draws the click to start text
+			drawingSurface.fillText("CLICK TO START",0,0);
+		
+			drawingSurface.restore();
+		}
+		
+		function control(sprite) {
+		
+				//changes the velocity of the panda
+				if (left)
+				{
+				sprite.vx-= sprite.acceleration;
+				}
+				if (right)
+				{
+				sprite.vx+= sprite.acceleration;
+				}
+				/*if (up)
+				{
+				vy-= ACCELERATION;
+				}
+				if (down)
+				{
+				vy+= ACCELERATION;
+				}*/
+				
+				
+		}
+		
+		function physics(sprite) {
+			//detects if the panda is on the ground
+				if (sprite.y >= canvas.height - sprite.height) {
+					sprite.onGround = true;
+					sprite.y = canvas.height - sprite.height - GRAVITY;
+					sprite.vy = 0;
+				}
+				else {
+					sprite.onGround = false;
+				}
+				//casues the panda to jump if the up arrow is pressed
+				
+				if (stunTime === 0) {
+					if (up) {
+						if (sprite.onGround) {
+							sprite.vy = sprite.jumpForce;
+						}
+					}
+				}
+				
+				if (stunTime === 0) {
+					if (!sprite.onGround) {
+						sprite.rotation += 4.7;
+						//backgroundObject.rotation -= 4.7;				
+					}
+					else {
+						sprite.rotation = 0;
+						//backgroundObject.rotation = 0;
+					}
+				}
+				
+				//applies friction to all movements
+				sprite.vx *= sprite.friction;
+				sprite.vy *= sprite.friction;
+				
+				sprite.vx = Math.max(Math.min(sprite.speed, sprite.vx), -sprite.speed);
+				//sprite.vy = Math.max(Math.min(sprite.speed, sprite.vy), -sprite.speed);
+
+				//applies gravity
+				sprite.vy += GRAVITY;
+				
+				//changes the x and y of the sprite
+				sprite.x += sprite.vx;
+				sprite.y += sprite.vy;	
+				
+				// prevents the sprite from going off the screen
+				sprite.x = Math.max(Math.min(canvas.width - sprite.width, sprite.x), 0);
+		}
+		var gameTime = 0;
+		function playGame() {
+			gameTime++;
+			//spawns the pineapples
+			checkSpawn();
+			
+			//runs the control function for the panda			
+			if (stunTime === 0)  {
+				control(panda);
+			}
+			physics(panda);
+			
+			stunTime--;
+			if (stunTime < 0) {
+				stunTime = 0;
+			}
+			
+			
+			
+			//reduces magnet time by 1
+			magnetTime--;
+			if (magnetTime < 0) {
+				magnetTime = 0;
+			}
+			
+			
+			
+			//moves the pineapples and magnets
+			if (sprites.length > 1) {
+				for (var i = 1; i < sprites.length; i++)
+				{
+					sprites[i].vy += GRAVITY/2;
+					
+					if (sprites[i].vy > sprites[i].maxSpeed) {
+						sprites[i].vy = sprites[i].maxSpeed;
+					}			
+					
+					
+					//activates magnet
+					if (magnetTime > 0 && sprites[i].pull) {
+						
+						var xLen = panda.centerX() - sprites[i].centerX();
+						var yLen = panda.centerY() - sprites[i].centerY();
+						
+						var magnitude = Math.sqrt((xLen*xLen) + (yLen*yLen));
+						
+						var xRatio = xLen / magnitude;
+						var yRatio = yLen / magnitude;
+						
+						var strength = 30000000000/(magnitude * magnitude * magnitude * magnitude);
+						
+						sprites[i].vx += xRatio * strength;
+						sprites[i].vy += yRatio * strength;
+					
+					}
+					
+					sprites[i].y += sprites[i].vy;
+					sprites[i].x += sprites[i].vx;
+					
+					//rotates everything
+					sprites[i].rotation += sprites[i].rotationAcceleration;
+					
+					//detects if the panda hits a pineapple or magnet
+					if (checkCollideRect(panda, sprites[i])) {
+						//performs collide code
+						sprites[i].collide();
+						//removes the pineapple
+						sprites.splice(i,1);
+						i--;
+						//plays the pickup sound
+						pickupSound.play();
+					}
+					
+					//removes the pineapple if it falls off of the canvas
+					if (sprites[i].y > canvas.height) {
+						sprites.splice(i,1);
+						i--;
+					}
+				}
+			}
+			
+			if (score < 0)
+			{
+				endGame();
+			}
+			
+			//draws everything on the screen
+			render();			
+		}
+		
+		function endGame()
+		{
+			gameState = MENU;
+						
+		}
+		
+		//detects if the panda and pineapple collide
+		function checkCollideRect(r1, r2) {
+			var vx = r1.centerX() - r2.centerX();
+			var vy = r1.centerY() - r2.centerY();
+			
+			var totalHalfWidths = r1.halfWidth() + r2.halfWidth();
+			var totalHalfHeights = r1.halfHeight() + r2.halfHeight();
+						
+			if (Math.abs(vx) < totalHalfWidths)
+			{
+				if (Math.abs(vy) < totalHalfWidths)
+				{
+					return true;
+				}
+			}
+			return false;
+		}
+		
+		function checkSpawn() {
+			//spawns pineapples or magnets
+			if (Math.random() > .7) {
+				if (Math.random() > .02) {
+					if (Math.random() > gameTime/20000) {
+						for (var i = 0; i < 1; i++) {
+							spawnPineapple();
+						}
+					}
+					else {
+						for (var i = 0; i < 1; i++) {
+							spawnPurplePineapple();
+						}
+					}
+				}
+				else if (Math.random() > .5){
+					spawnCoconut();
+				}
+				else {
+					spawnPowerUp();
+				}
+			}
+		}
+		
+		function spawnPineapple() {
+			//creates the pineapple at a random place above the canvas
+			var newPineapple = Object.create(pineappleObject);
+			newPineapple.y = -newPineapple.height;
+			newPineapple.x = Math.floor(Math.random() * (canvas.width - newPineapple.width));
+			newPineapple.rotation = Math.floor(Math.random() * 360);
+			newPineapple.rotationAcceleration = Math.floor(Math.random() * 7) - 3;
+			
+			//adds the pineapple to the sprites array
+			sprites.push(newPineapple);
+		}
+		
+		function spawnPurplePineapple() {
+			//creates the pineapple at a random place above the canvas
+			var newPineapple = Object.create(purplePineappleObject);
+			newPineapple.y = -newPineapple.height;
+			newPineapple.x = Math.floor(Math.random() * (canvas.width - newPineapple.width));
+			newPineapple.rotation = Math.floor(Math.random() * 360);
+			newPineapple.rotationAcceleration = Math.floor(Math.random() * 7) - 3;
+			
+			//adds the pineapple to the sprites array
+			sprites.push(newPineapple);
+		}
+		
+		function spawnCoconut() {
+			//creates the pineapple at a random place above the canvas
+			var newPineapple = Object.create(coconutObject);
+			newPineapple.y = -newPineapple.height;
+			newPineapple.x = Math.floor(Math.random() * (canvas.width - newPineapple.width));
+			newPineapple.rotation = Math.floor(Math.random() * 360);
+			newPineapple.rotationAcceleration = Math.floor(Math.random() * 7) - 3;
+			
+			//adds the pineapple to the sprites array
+			sprites.push(newPineapple);
+		}
+		
+		//spawns magnets
+		function spawnPowerUp() {
+		
+			//creates the magnet at a random place above the canvas
+			var newMagnet = Object.create(magnetObject);
+			newMagnet.y = -newMagnet.height;
+			newMagnet.x = Math.floor(Math.random() * (canvas.width - newMagnet.width));
+			newMagnet.rotation = Math.floor(Math.random() * 360);
+			newMagnet.rotationAcceleration = Math.floor(Math.random() * 7) - 3;
+			
+			//adds the magnet to the sprites array
+			sprites.push(newMagnet);
+		}
+		
+		function render() {
+			//clears the drawing sorface
+			drawingSurface.clearRect(0,0,canvas.width,canvas.height);
+			//draws the background
+			drawSprite(backgroundObject);
+			
+			//draws the sprites
+			if (sprites.length > 1) {
+				for (var i = 1; i < sprites.length; i++) {
+					drawSprite(sprites[i]);
+				}
+			}
+			
+			//draws the panda
+			drawSprite(panda);
+			
+			//sets the color variable to white
+			var color = "#FFFFFF";
+			/*var color = "rgba(";
+			color = color + Math.floor(Math.random()*256).toString();
+			color = color + ",";
+			color = color + Math.floor(Math.random()*256).toString();
+			color = color + ",";
+			color = color + Math.floor(Math.random()*256).toString();
+			color = color + ",1)";*/
+			
+			//sets drawing surface variables
+			drawingSurface.font="100px Verdana";
+			drawingSurface.fillStyle=color;
+			drawingSurface.textBaseline="top";
+			//draws the score
+			drawingSurface.fillText(score.toString(),10,10);
+		}
+		
+		function drawSprite(sprite) {
+			drawingSurface.save();
+			
+			if (false) {
+				drawingSurface.translate(1366/2, 768/2);
+			
+				//drawingSurface.rotate(Math.sin(updateTime / 2) / (10000/updateTime));
+				drawingSurface.rotate((updateTime / 20));
+				
+				
+				//draws the sprite
+				drawingSurface.drawImage(
+				image,
+				sprite.sourceX, sprite.sourceY, sprite.sourceWidth, sprite.sourceHeight,
+				sprite.x - (1366/2), sprite.y - (768/2), sprite.width, sprite.height
+				);
+			}
+			else {
+			
+			drawingSurface.translate(sprite.centerX(), sprite.centerY());
+			
+			if (sprite.rotation !== 0) {
+				drawingSurface.rotate(sprite.rotation * Math.PI / 180);
+			}
+			
+			
+			//draws the sprite
+			drawingSurface.drawImage(
+			image,
+			sprite.sourceX, sprite.sourceY, sprite.sourceWidth, sprite.sourceHeight,
+			-sprite.halfWidth(), -sprite.halfHeight(), sprite.width, sprite.height
+			);
+			}
+			
+			drawingSurface.restore();
+		}
+		
+		function keyDownHandler(event)
+		{
+			//detects if a key is pressed
+			switch(event.keyCode)
+			{
+				case RIGHT:
+					right=true;
+					break;
+				case LEFT:
+					left=true;
+					break;
+				case UP:
+					up=true;
+					break;
+				case DOWN:
+					down=true;
+					break;
+			}
+		}
+		
+		function keyUpHandler(event)
+		{
+			//detects if a key is released
+			switch(event.keyCode)
+			{
+				case RIGHT:
+					right=false;
+					break;
+				case LEFT:
+					left=false;
+					break;
+				case UP:
+					up=false;
+					break;
+				case DOWN:
+					down=false;
+					break;
+			}
+		}
+
+		
+		
+	</script>
+</body>
+</html>
