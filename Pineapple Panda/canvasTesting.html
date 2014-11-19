@@ -72,8 +72,8 @@
 			mouse.x = event.offsetX;
 			mouse.y = event.offsetY;
 			
-			console.log(mouse.x);
-			console.log(mouse.y);
+			//console.log(mouse.x);
+			//console.log(mouse.y);
 			
 		}, false);
 
@@ -104,7 +104,7 @@
 		pineappleObject.pull = true;
 		pineappleObject.maxSpeed = 10;
 		pineappleObject.collide = function() {
-			score++;
+			score--;
 		}
 		
 		var purplePineappleObject = Object.create(spriteObject);
@@ -185,6 +185,7 @@
 		//setting game state variables
 		var MENU = 0;
 		var PLAYING = 1;
+		var DEATH = 2;
 		
 		var gameState = MENU;
 		
@@ -222,6 +223,8 @@
 			panda.jumpForce = -15;
 			
 			sprites.push(panda);
+			
+			panda.rotation = 0;
 		}
 		
 		//sets a variable that increases by one every tick
@@ -243,16 +246,61 @@
 				case PLAYING:
 					playGame();	
 					break;
+				case DEATH:
+					death();
+					break;
 			}
 			
 		}
 
+		function death()
+		{
+			if(mouse.down)
+			{
+				gameState = MENU;
+				resetGame();
+				mouse.down = false;
+			}
+			
+			renderDeath();
+		}
+		
+		//draws the deathscreen
+		function renderDeath()
+		{
+			//clears the canvas
+			drawingSurface.clearRect(0,0,canvas.width,canvas.height);
+			//draws the background
+			drawSprite(backgroundObject);
+			
+			//sets the color variable
+			var color = "#FFD700";
+			
+			drawingSurface.save();
+			drawingSurvace.translate(canvas.width/2, canvas.height * 1/3);
+			//changes the variables of the drawing surface
+			drawingSurface.font="bold 90px Verdana";
+			drawingSurface.fillStyle=color;
+			drawingSurface.textAlign="center";
+			drawingSurface.textBaseline="middle";
+			drawingSurface.shadowColor = "#990000";
+			drawingSurface.shadowOffsetX = 5;
+			drawingSurface.shadowOffsetY = 5;
+			drawingSurface.shadowBlur = 10;
+			//causes the text to wobble
+			drawingSurface.rotate(Math.sin(updateTime/40)/80);
+			//draws the text
+			drawingSurface.fillText("You Lasted " + (Math.floor(gameTime/60)).toString() + " seconds",0,0;
+			drawingSurface.restore();
+		}
+		
 		//logic behind the menu
 		function menu() {
 			renderMenu();
 			
 			if (mouse.down) {
 				gameState = PLAYING;
+				resetGame();
 			}
 			
 			if (panda.centerX() < mouse.x) {
@@ -507,8 +555,7 @@
 		
 		function endGame()
 		{
-			gameState = MENU;
-						
+			gameState = DEATH;						
 		}
 		
 		//detects if the panda and pineapple collide
@@ -629,12 +676,24 @@
 			color = color + Math.floor(Math.random()*256).toString();
 			color = color + ",1)";*/
 			
+			drawingSurface.save();
 			//sets drawing surface variables
 			drawingSurface.font="100px Verdana";
 			drawingSurface.fillStyle=color;
 			drawingSurface.textBaseline="top";
 			//draws the score
 			drawingSurface.fillText(score.toString(),10,10);
+			drawingSurface.restore();
+			
+			drawingSurface.save();
+			//sets drawing surface variables
+			drawingSurface.font="100px Verdana";
+			drawingSurface.fillStyle=color;
+			drawingSurface.textBaseline="top";
+			drawingSurface.textAlign="right";
+			//draws the score
+			drawingSurface.fillText((Math.floor(gameTime/60)).toString(),canvas.width-10,10);
+			drawingSurface.restore();
 		}
 		
 		function drawSprite(sprite) {
