@@ -225,6 +225,8 @@
 			panda = Object.create(pandaObject);
 			panda.x = (canvas.width/2) - (panda.width/2);
 			panda.y = canvas.height-panda.height;
+			panda.jumpForce = -15;
+			panda.acceleration = .6;
 			panda.rotation = 0;
 			
 			sprites.push(panda);
