@@ -6,7 +6,7 @@
 	var image = new Image();
 	image.src = "images/penguin.png";
 	image.addEventListener("load", function() {			
-		drawingSurface.drawImage(image, 50, 50, 300, 300);
+		
 	}, false);
 	
 	var spriteObject = {
@@ -37,22 +37,22 @@
 	penguinObject.sourceHeight = 220;
 	
 	function drawSprite(sprite) {
-			drawingSurface.save();
-			
-			drawingSurface.translate(sprite.centerX(), sprite.centerY());
-			
-			if (sprite.rotation !== 0) {
-				drawingSurface.rotate(sprite.rotation * Math.PI / 180);
-			}
-			
-			
-			//draws the sprite
-			drawingSurface.drawImage(
-				image,
-				sprite.sourceX, sprite.sourceY, sprite.sourceWidth, sprite.sourceHeight,
-				-sprite.halfWidth(), -sprite.halfHeight(), sprite.width, sprite.height
-			);
-			
-			
-			drawingSurface.restore();	
+		drawingSurface.save();
+		
+		drawingSurface.translate(sprite.centerX(), sprite.centerY());
+		
+		if (sprite.rotation !== 0) {
+			drawingSurface.rotate(sprite.rotation * Math.PI / 180);
+		}			
+		
+		//draws the sprite
+		drawingSurface.drawImage(
+			image,
+			sprite.sourceX, sprite.sourceY, sprite.sourceWidth, sprite.sourceHeight,
+			-sprite.halfWidth(), -sprite.halfHeight(), sprite.width, sprite.height
+		);			
+		
+		drawingSurface.restore();
+	}
+	
 } ());
