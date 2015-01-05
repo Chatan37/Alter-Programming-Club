@@ -48,11 +48,11 @@
 			
 			//draws the sprite
 			drawingSurface.drawImage(
-			image,
-			sprite.sourceX, sprite.sourceY, sprite.sourceWidth, sprite.sourceHeight,
-			-sprite.halfWidth(), -sprite.halfHeight(), sprite.width, sprite.height
+				image,
+				sprite.sourceX, sprite.sourceY, sprite.sourceWidth, sprite.sourceHeight,
+				-sprite.halfWidth(), -sprite.halfHeight(), sprite.width, sprite.height
 			);
-			}
+			
 			
 			drawingSurface.restore();	
 } ());
