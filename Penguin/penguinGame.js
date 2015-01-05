@@ -6,7 +6,7 @@
 	var image = new Image();
 	image.src = "images/penguin.png";
 	image.addEventListener("load", function() {			
-		
+		update();
 	}, false);
 	
 	var spriteObject = {
@@ -23,7 +23,12 @@
 		friction: .98,
 		acceleration: .1,
 		gravity: .3,
-		maxSpeed: 5
+		maxSpeed: 5,
+		centerX: function() { return this.x + this.width/2; },
+		centerY: function() { return this.y + this.height/2;},
+		halfWidth: function() { return this.width/2; },
+		halfHeight: function () { return this.height/2; }
+		
 	};
 	
 	var penguinObject = Object.create(spriteObject);
@@ -35,6 +40,12 @@
 	penguinObject.sourceY = 0;
 	penguinObject.sourceWidth = 200;
 	penguinObject.sourceHeight = 220;
+	
+	function update() {
+		window.requestAnimationFrame(update);
+		
+		drawSprite(penguinObject);
+	}
 	
 	function drawSprite(sprite) {
 		drawingSurface.save();
