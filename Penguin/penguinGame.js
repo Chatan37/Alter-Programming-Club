@@ -41,8 +41,52 @@
 	penguinObject.sourceWidth = 200;
 	penguinObject.sourceHeight = 220;
 	
+	var mouse= {
+		x: 0,
+		y: 0,
+		down: false
+	};
+	
+	canvas.addEventListener("mousemove", function(event) {
+		mouse.x = event.offsetX;
+		mouse.y = event.offsetY;
+		
+	}, false);
+	
 	function update() {
 		window.requestAnimationFrame(update);
+		
+		leny = mouse.y - penguinObject.centerY();
+		lenx = mouse.x - penguinObject.centerX();
+		magnitude = Math.sqrt((leny * leny) + (lenx * lenx));
+		dx = lenx / magnitude;
+		dy = leny / magnitude;	
+		
+		if (magnitude > 50) {
+			penguinObject.vx += dx * penguinObject.acceleration;
+			penguinObject.vy += dy * penguinObject.acceleration;
+		}
+		
+		penguinObject.vx *= penguinObject.friction;
+		penguinObject.vy *= penguinObject.friction;
+		
+		if (penguinObject.vx > penguinObject.maxSpeed) {
+			penguinObject.vx = penguinObject.maxSpeed;
+		}
+		if (penguinObject.vx < -penguinObject) {
+			penguinObject.vx = -penguinObject.maxSpeed;
+		}
+		if (penguinObject.vy > penguinObject.maxSpeed) {
+			penguinObject.vy = penguinObject.maxSpeed;
+		}
+		if (penguinObject.vy < -penguinObject) {
+			penguinObject.vy = -penguinObject.maxSpeed;
+		}
+		penguinObject.x = penguinObject.x + penguinObject.vx;
+		penguinObject.y = penguinObject.y + penguinObject.vy;
+		
+		
+		drawingSurface.clearRect(0,0, canvas.width, canvas.height);
 		
 		drawSprite(penguinObject);
 	}
