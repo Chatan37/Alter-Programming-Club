@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+
+		<title>Guessing Game</title>
+
+		
+		
+	</head>
+
+	<body>
+		<div>
+			<header>
+				<h1>Number Guessing Game</h1>
+			</header>
+
+			<section>
+				<h4>Guess a number between 0 and 100</h4>
+				<p id="pTag">Your last guess Guess: </p> 
+				<p id="guessesLeft">Guesses remaining: </p>
+				<input placeholder="Guess a number..." id="numberInput">
+				<button id="button1">Submit Guess</button>
+				<p id="pTag2"> </p>
+			</section>
+		</div>
+		<script type="text/javascript">
+			var pTag = document.querySelector("#pTag");
+			var pTag2 = document.querySelector("#pTag2");
+			var button = document.querySelector("#button1");
+			var input = document.querySelector("#numberInput");
+			var guessesLeftP = document.querySelector("#guessesLeft");
+			
+			var secretNumber = Math.floor(Math.random() * 99) + 1;
+			var guessesLeft = 6;
+			var gameWon = false;
+			
+			button.addEventListener("click", checkInput, false);
+			input.addEventListener("keydown", checkEnter, false);
+			
+			function checkEnter(event)
+			{
+				if (event.keyCode == 13)
+				{
+					checkInput();
+				}
+			}
+			
+			function checkNumber(num)
+			{
+				if (num === secretNumber)
+				{
+					pTag2.innerHTML = "You Win :)";
+					gameWon=true;
+				}
+				else if (num < secretNumber)
+				{
+					pTag2.innerHTML = "Too Low";
+				}
+				else if (num > secretNumber)
+				{
+					pTag2.innerHTML = "Too High";
+				}
+				
+				input.value = "";
+			}
+			
+			function checkInput()
+			{
+				if (guessesLeft>0)
+				{
+					if (typeof parseInt(input.value) === "number")
+					{
+						pTag.innerHTML = "Your last guess Guess " + input.value;
+						checkNumber(parseInt(input.value));
+						guessesLeft--;
+						guessesLeftP.innerHTML = "Guesses remaining: " + guessesLeft;
+						if (guessesLeft <= 0)
+						{
+							if (!gameWon)
+							{
+								pTag2.innerHTML = "You Lost! The secret number was "+secretNumber.toString()+".";
+								input.disabled = true;
+								button.disabled = true;
+							}
+						}
+					}
+				}
+			}
+	
+		</script>
+	</body>
+</html>
